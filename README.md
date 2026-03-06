@@ -1,4 +1,4 @@
-# SalarySync - Payroll Management System
+# SalarySync
 
 ## Getting Started
 
