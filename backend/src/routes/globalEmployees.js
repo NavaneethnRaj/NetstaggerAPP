@@ -7,7 +7,8 @@ const router = express.Router();
 // GET /api/employees — all employee records for the logged-in user
 router.get('/', authMiddleware, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50; // default to 50
+    const limit = parseInt(req.query.limit) || 50;
+    const search = req.query.search || '';
     const offset = (page - 1) * limit;
 
     try {
@@ -22,24 +23,36 @@ router.get('/', authMiddleware, async (req, res) => {
         }
 
         const uploadIds = uploadRows.map(row => row.id);
+        const searchPattern = `%${search}%`;
 
-        // Step 2: Query employees using the composite index on (upload_id, employee_id)
-        const query = `
+        // Step 2: Query employees
+        let query = `
             SELECT e.* 
             FROM employees e
             WHERE e.upload_id IN (?)
-            ORDER BY e.upload_id, e.employee_id ASC
-            LIMIT ? OFFSET ?
         `;
-
-        const countQuery = `
+        let countQuery = `
             SELECT COUNT(*) as total 
             FROM employees e
             WHERE e.upload_id IN (?)
         `;
 
-        const [rows] = await pool.query(query, [uploadIds, limit, offset]);
-        const [[{ total }]] = await pool.query(countQuery, [uploadIds]);
+        const params = [uploadIds];
+        const countParams = [uploadIds];
+
+        if (search) {
+            const searchFilter = ` AND (e.name LIKE ? OR e.employee_id LIKE ?)`;
+            query += searchFilter;
+            countQuery += searchFilter;
+            params.push(searchPattern, searchPattern);
+            countParams.push(searchPattern, searchPattern);
+        }
+
+        query += ` ORDER BY e.upload_id, e.employee_id ASC LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+
+        const [rows] = await pool.query(query, params);
+        const [[{ total }]] = await pool.query(countQuery, countParams);
 
         res.json({
             data: rows,

@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
 import api from '../api/client';
+import { useNotifications } from '../context/NotificationContext';
 
 const EmployeePage = () => {
+    const { notifications, clearNotifications } = useNotifications();
     const [employees, setEmployees] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalEmployees, setTotalEmployees] = useState(0);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const fetchEmployees = async () => {
         setIsLoading(true);
         try {
-            const { data } = await api.get(`/employees?page=${page}&limit=10`);
+            const { data } = await api.get(`/employees?page=${page}&limit=10&search=${searchTerm}`);
             setEmployees(data.data || []);
             setTotalPages(data.pagination?.totalPages || 1);
             setTotalEmployees(data.pagination?.total || 0);
@@ -26,8 +29,12 @@ const EmployeePage = () => {
     };
 
     useEffect(() => {
-        fetchEmployees();
-    }, [page]);
+        const delayDebounceFn = setTimeout(() => {
+            fetchEmployees();
+        }, 300);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [page, searchTerm]);
 
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('en-US', {
@@ -42,10 +49,19 @@ const EmployeePage = () => {
             <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10">
                 <h1 className="text-lg font-semibold text-slate-800">Employee Directory</h1>
                 <div className="flex items-center gap-4">
-                    <button className="text-slate-500 hover:text-slate-700 p-2">
+                    <button
+                        className="text-slate-500 hover:text-slate-700 p-2 relative"
+                        onClick={clearNotifications}
+                    >
                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                         </svg>
+                        {notifications.length > 0 && (
+                            <span className="absolute top-1.5 right-1.5 flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
+                            </span>
+                        )}
                     </button>
                     <div className="h-8 w-[1px] bg-slate-200"></div>
                 </div>
@@ -54,12 +70,24 @@ const EmployeePage = () => {
             {/* Content Wrapper */}
             <div className="p-8 space-y-8 max-w-7xl mx-auto w-full">
                 <section>
-                    {/* <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-4">
                         <h2 className="text-base font-semibold text-slate-900">All Employees</h2>
-                        <button className="text-sm text-white bg-blue-600 px-4 py-2 rounded-md hover:bg-blue-700 font-medium transition-colors">
-                            + Add Employee
-                        </button>
-                    </div> */}
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search by name or ID..."
+                                value={searchTerm}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64 text-sm"
+                            />
+                            <svg className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
 
                     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
@@ -116,7 +144,7 @@ const EmployeePage = () => {
 
                         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                             <span className="text-xs text-slate-500">
-                                Showing {employees.length} employees on page {page} of {totalPages} (Total: {totalEmployees})
+                                Showing {employees.length} records out of  {totalEmployees}
                             </span>
                             <div className="flex gap-2">
                                 <button

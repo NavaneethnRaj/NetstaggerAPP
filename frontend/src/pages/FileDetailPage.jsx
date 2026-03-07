@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { useNotifications } from '../context/NotificationContext';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const FileDetailPage = () => {
     const { id } = useParams();
+    const { notifications, clearNotifications } = useNotifications();
 
     const [fileInfo, setFileInfo] = useState(null);
     const [summary, setSummary] = useState({ totalRecords: 0, totalTax: 0, totalNetPayout: 0 });
@@ -140,6 +142,21 @@ const FileDetailPage = () => {
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-3">
+                        <button
+                            className="text-gray-500 hover:text-gray-700 p-2 relative"
+                            onClick={clearNotifications}
+                        >
+                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                            </svg>
+                            {notifications.length > 0 && (
+                                <span className="absolute top-1.5 right-1.5 flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
+                                </span>
+                            )}
+                        </button>
+                        <div className="h-6 w-px bg-gray-200"></div>
                         <button id="export-button" type="button" className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             <svg className="-ml-1 mr-2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>

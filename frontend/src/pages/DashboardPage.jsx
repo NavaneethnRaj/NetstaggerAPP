@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { io } from 'socket.io-client';
+import { useNotifications } from '../context/NotificationContext';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 
 const DashboardPage = () => {
     const { user } = useAuth();
+    const { notifications, clearNotifications } = useNotifications();
     const [uploads, setUploads] = useState([]);
 
     const fetchUploads = async () => {
@@ -20,27 +21,14 @@ const DashboardPage = () => {
 
     useEffect(() => {
         fetchUploads();
+    }, []);
 
-        const socketUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
-        const socket = io(socketUrl);
-
-        if (user?.id) {
-            socket.emit('register', user.id);
-        }
-
-        socket.on('processing_complete', (payload) => {
-            if (payload.status === 'completed') {
-                toast.success(`File "${payload.fileName}" finished processing!`);
-            } else {
-                toast.error(`File "${payload.fileName}" failed to process: ${payload.error}`);
-            }
+    // Also refresh uploads if a notification arrives (optional but good for UX)
+    useEffect(() => {
+        if (notifications.length > 0) {
             fetchUploads();
-        });
-
-        return () => {
-            socket.disconnect();
-        };
-    }, [user]);
+        }
+    }, [notifications]);
 
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
@@ -50,11 +38,11 @@ const DashboardPage = () => {
         formData.append('file', file);
 
         try {
-            const { data } = await api.post('/uploads', formData, {
+            await api.post('/uploads', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            // Update the UI immediately to show 'processing'
-            setUploads(prev => [data, ...prev]);
+            // Fetch the latest state to avoid race condition with real-time events
+            fetchUploads();
         } catch (err) {
             console.error('Failed to upload file:', err);
             toast.error('Upload failed. Please try again.');
@@ -134,10 +122,19 @@ const DashboardPage = () => {
             <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10">
                 <h1 className="text-lg font-semibold text-slate-800">Salary Upload Dashboard</h1>
                 <div className="flex items-center gap-4">
-                    <button className="text-slate-500 hover:text-slate-700 p-2">
+                    <button
+                        className="text-slate-500 hover:text-slate-700 p-2 relative"
+                        onClick={clearNotifications}
+                    >
                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                         </svg>
+                        {notifications.length > 0 && (
+                            <span className="absolute top-1.5 right-1.5 flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
+                            </span>
+                        )}
                     </button>
                     <div className="h-8 w-[1px] bg-slate-200"></div>
                     <div className="flex items-center gap-2">
