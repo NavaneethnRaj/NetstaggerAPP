@@ -97,19 +97,20 @@ const EmployeePage = () => {
                                         <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">ID</th>
                                         <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">Name</th>
                                         <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">Base Salary</th>
-                                        <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">Status</th>
+                                        <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">Total CTC</th>
+                                        {/* <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">Status</th> */}
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-slate-100">
                                     {isLoading ? (
                                         <tr>
-                                            <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
+                                            <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
                                                 Loading employees...
                                             </td>
                                         </tr>
                                     ) : employees.length === 0 ? (
                                         <tr>
-                                            <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
+                                            <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
                                                 <div className="flex flex-col items-center">
                                                     <svg className="w-12 h-12 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -130,11 +131,14 @@ const EmployeePage = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                                                     {formatCurrency(parseFloat(emp.basic_pay) > 0 ? emp.basic_pay : parseFloat(emp.ctc) > 0 ? emp.ctc : emp.allowance)}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                                                    {formatCurrency(emp.ctc)}
+                                                </td>
+                                                {/* <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                         Active
                                                     </span>
-                                                </td>
+                                                </td> */}
                                             </tr>
                                         ))
                                     )}
