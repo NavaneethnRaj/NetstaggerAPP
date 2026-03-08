@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const path = require('path');
 const pool = require('../db/mysql');
 const socketService = require('./socketService');
+const { sendProcessingComplete } = require('./emailService');
 
 class ProcessingQueue {
     constructor() {
@@ -52,6 +53,12 @@ class ProcessingQueue {
                 processedAt: new Date().toISOString()
             });
 
+            // Send email notification
+            const [[userRow]] = await pool.query('SELECT email FROM users WHERE id = ?', [job.userId]);
+            if (userRow) {
+                await sendProcessingComplete(userRow.email, job.originalName, 'completed', job.uploadId);
+            }
+
         } catch (error) {
             console.error(`Error processing uploadId ${job.uploadId}:`, error);
 
@@ -69,6 +76,12 @@ class ProcessingQueue {
                 fileName: job.originalName,
                 processedAt: new Date().toISOString()
             });
+
+            // Send email notification
+            const [[userRow]] = await pool.query('SELECT email FROM users WHERE id = ?', [job.userId]).catch(() => [[null]]);
+            if (userRow) {
+                await sendProcessingComplete(userRow.email, job.originalName, 'failed', job.uploadId);
+            }
         } finally {
             this.isProcessing = false;
             // Recursively process the next item in the queue
