@@ -9,9 +9,8 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Validate token on mount — 5 s timeout so the loading screen never hangs
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         const checkAuth = async () => {
             if (!token) {
@@ -22,9 +21,15 @@ export const AuthProvider = ({ children }) => {
                 const { data } = await api.get('/auth/me', { signal: controller.signal });
                 setUser(data);
             } catch (err) {
-                // Timeout or real auth error — either way clear the stored token
-                setToken(null);
-                localStorage.removeItem('ss_token');
+                // Only clear the token on a genuine auth rejection (401 / 403).
+                // Network errors, timeouts, or aborts should NOT log the user out.
+                const status = err?.response?.status;
+                if (status === 401 || status === 403) {
+                    setToken(null);
+                    localStorage.removeItem('ss_token');
+                }
+                // If it's an AbortError (timeout) or network error, keep the token
+                // and let the user stay on the page — they can retry manually.
             } finally {
                 clearTimeout(timeoutId);
                 setLoading(false);
