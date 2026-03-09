@@ -19,14 +19,14 @@ async function sendProcessingComplete(toEmail, fileName, status, uploadId) {
     const isSuccess = status === 'completed';
 
     const subject = isSuccess
-        ? `✅ File Processing Complete — ${fileName}`
-        : `❌ File Processing Failed — ${fileName}`;
+        ? `File Processing Complete — ${fileName}`
+        : `File Processing Failed — ${fileName}`;
 
     const html = `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
         <div style="background: ${isSuccess ? '#2563eb' : '#dc2626'}; padding: 28px 32px;">
             <h1 style="color: white; margin: 0; font-size: 20px; font-weight: 700;">
-                ${isSuccess ? 'Processing Complete' : '❌ Processing Failed'}
+                ${isSuccess ? 'Processing Complete' : ' Processing Failed'}
             </h1>
         </div>
         <div style="padding: 28px 32px; background: #ffffff;">
@@ -55,9 +55,9 @@ async function sendProcessingComplete(toEmail, fileName, status, uploadId) {
             subject,
             html,
         });
-        console.log(`📧 Email sent to ${toEmail} for uploadId: ${uploadId} (${status})`);
+        console.log(` Email sent to ${toEmail} for uploadId: ${uploadId} (${status})`);
     } catch (err) {
-        console.error(`❌ Failed to send email to ${toEmail}:`, err.message);
+        console.error(` Failed to send email to ${toEmail}:`, err.message);
     }
 }
 

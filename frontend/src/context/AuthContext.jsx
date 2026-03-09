@@ -9,23 +9,33 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Validate token on mount
+        // Validate token on mount — 5 s timeout so the loading screen never hangs
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         const checkAuth = async () => {
             if (!token) {
                 setLoading(false);
                 return;
             }
             try {
-                const { data } = await api.get('/auth/me');
+                const { data } = await api.get('/auth/me', { signal: controller.signal });
                 setUser(data);
             } catch (err) {
+                // Timeout or real auth error — either way clear the stored token
                 setToken(null);
                 localStorage.removeItem('ss_token');
             } finally {
+                clearTimeout(timeoutId);
                 setLoading(false);
             }
         };
         checkAuth();
+
+        return () => {
+            controller.abort();
+            clearTimeout(timeoutId);
+        };
     }, [token]);
 
     const login = async (email, password) => {

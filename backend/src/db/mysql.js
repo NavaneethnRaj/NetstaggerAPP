@@ -17,10 +17,10 @@ const pool = mysql.createPool({
 async function testConnection() {
     try {
         const conn = await pool.getConnection();
-        console.log('✅ MySQL connected successfully');
+        console.log(' MySQL connected successfully');
         conn.release();
     } catch (err) {
-        console.error('❌ MySQL connection failed:', err.message);
+        console.error(' MySQL connection failed:', err.message);
         // Retry after 3 seconds (MySQL container may still be starting)
         setTimeout(testConnection, 3000);
     }

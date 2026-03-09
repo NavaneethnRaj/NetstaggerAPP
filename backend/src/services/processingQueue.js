@@ -132,7 +132,11 @@ class ProcessingQueue {
     }
 
     async processXLSX(job) {
-        const workbook = xlsx.readFile(job.filePath);
+        // Read file asynchronously so we don't block the event loop
+        const buffer = await fs.promises.readFile(job.filePath);
+        // Yield briefly so any pending socket/DB callbacks can run
+        await new Promise(resolve => setImmediate(resolve));
+        const workbook = xlsx.read(buffer, { type: 'buffer' });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const data = xlsx.utils.sheet_to_json(sheet);

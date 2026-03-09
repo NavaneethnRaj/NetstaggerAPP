@@ -32,8 +32,16 @@ const upload = multer({
 
 // Parse uploaded Excel/CSV and insert employee rows
 // Logic moved to src/services/processingQueue.js for background processing
+// Per-upload timeout middleware: 5 minutes for a 100MB file on slow connections
+const uploadTimeout = (req, res, next) => {
+    req.setTimeout(5 * 60 * 1000, () => {
+        res.status(408).json({ error: 'Upload timed out. Please try again.' });
+    });
+    next();
+};
+
 // POST /api/uploads — upload a file
-router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
+router.post('/', authMiddleware, uploadTimeout, upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
